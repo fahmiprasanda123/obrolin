@@ -1,0 +1,13 @@
+.git
+.github
+.env*
+config/master.key
+config/credentials/*.key
+log/*
+!log/.keep
+tmp/*
+!tmp/.keep
+storage/*
+coverage
+spec/examples.txt
+.rspec_status

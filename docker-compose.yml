@@ -1,0 +1,154 @@
+# Local development stack: `make dev-up`, then open http://localhost:5173
+#
+#   frontend       Vite dev server (hot reload)        :5173
+#   api            Rails API (puma)                     :3001
+#   cable          ActionCable server (same image)      (via Vite proxy /cable)
+#   sidekiq        background jobs (same image)
+#   letter_opener  captured emails UI                   :3002/letter_opener
+#   migrate        one-shot: indexes + db:prepare (+ seed on first run)
+#   postgres / mongodb / redis
+
+x-backend: &backend
+  build:
+    context: ./backend
+    target: dev
+  image: obrolin-backend:dev
+  volumes:
+    - ./backend:/app
+  environment: &backend-env
+    RAILS_ENV: development
+    DATABASE_HOST: postgres
+    DATABASE_PORT: "5432"
+    POSTGRES_USER: ${POSTGRES_USER:-obrolin}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-obrolin}
+    MONGODB_URL: mongodb://mongodb:27017/obrolin_development
+    REDIS_URL: redis://redis:6379/0
+    REDIS_CABLE_URL: redis://redis:6379/1
+    REDIS_SIDEKIQ_URL: redis://redis:6379/2
+    JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (cp .env.example .env)}
+    ALLOWED_ORIGINS: http://localhost:5173
+    FRONTEND_URL: http://localhost:5173
+
+x-backend-depends: &backend-depends
+  postgres:
+    condition: service_healthy
+  mongodb:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+  migrate:
+    condition: service_completed_successfully
+
+services:
+  migrate:
+    <<: *backend
+    command: ["bin/rails", "db:mongoid:create_indexes", "db:prepare"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    ports:
+      - "3001:3000"
+    depends_on: *backend-depends
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/up"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+  cable:
+    <<: *backend
+    command: ["bundle", "exec", "puma", "-p", "3000", "cable/config.ru"]
+    depends_on: *backend-depends
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/up"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
+
+  sidekiq:
+    <<: *backend
+    command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+    depends_on: *backend-depends
+
+  # Same image again, only to browse emails written by Sidekiq. The mails live
+  # in backend/tmp/letter_opener, shared through the bind mount.
+  letter_opener:
+    <<: *backend
+    command: ["bin/rails", "server", "-b", "0.0.0.0", "-p", "3000", "-P", "/tmp/letter_opener.pid"]
+    ports:
+      - "3002:3000"
+    depends_on: *backend-depends
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    image: obrolin-frontend:dev
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_PROXY: http://api:3000
+      VITE_CABLE_PROXY: http://cable:3000
+      VITE_USE_POLLING: "1"
+    volumes:
+      - ./frontend:/app
+      # Keep the Linux node_modules from the image instead of the host's.
+      - /app/node_modules
+    depends_on:
+      api:
+        condition: service_healthy
+      cable:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-obrolin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-obrolin}
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-obrolin}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:

@@ -1,0 +1,23 @@
+# PostgreSQL stores relational data that needs constraints and transactions:
+# users, workspaces, memberships, channels, invitations.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: <%= ENV.fetch("DATABASE_HOST", "localhost") %>
+  port: <%= ENV.fetch("DATABASE_PORT", 5432) %>
+  username: <%= ENV.fetch("POSTGRES_USER", "obrolin") %>
+  password: <%= ENV.fetch("POSTGRES_PASSWORD", "obrolin") %>
+
+development:
+  <<: *default
+  database: obrolin_development
+
+test:
+  <<: *default
+  database: obrolin_test
+
+# In containers/Kubernetes, DATABASE_URL takes precedence over the keys above.
+production:
+  <<: *default
+  database: <%= ENV.fetch("POSTGRES_DB", "obrolin_production") %>

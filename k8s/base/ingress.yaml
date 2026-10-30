@@ -1,0 +1,51 @@
+# Two Ingress objects for one host: ingress-nginx annotations apply to the
+# whole Ingress, and only /cable should get hour-long proxy timeouts.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: obrolin-cable
+  annotations:
+    # WebSockets are long-lived. The default 60s would drop idle connections
+    # (ActionCable pings every 3s, but keep a generous margin).
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: obrolin.local
+      http:
+        paths:
+          - path: /cable
+            pathType: Prefix
+            backend:
+              service:
+                name: cable
+                port:
+                  number: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: obrolin-web
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "1m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: obrolin.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 3000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80

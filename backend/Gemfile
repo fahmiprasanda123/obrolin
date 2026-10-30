@@ -1,0 +1,47 @@
+source "https://rubygems.org"
+
+gem "rails", "~> 8.0.3"
+gem "puma", ">= 5.0"
+gem "bootsnap", require: false
+gem "tzinfo-data", platforms: %i[ windows jruby ]
+
+# json 3.x dropped the `quirks_mode` option that ActiveSupport 8.0 still passes.
+gem "json", "~> 2.10"
+
+# Databases
+gem "pg", "~> 1.1"            # PostgreSQL via ActiveRecord (relational data)
+gem "mongoid", "~> 9.0"       # MongoDB ODM (messages, activity logs)
+
+# Redis: ActionCable pub/sub, Sidekiq queues, cache, presence, JWT denylist
+# ActionCable 8.0's Redis adapter requires redis < 6.
+gem "redis", "~> 5.4"
+gem "sidekiq", "~> 7.3"
+# connection_pool 3.x changed TimedStack#pop; Sidekiq 7.3's scheduler still uses the 2.x API.
+gem "connection_pool", "~> 2.5"
+
+# Auth
+gem "bcrypt", "~> 3.1.7"
+gem "jwt", "~> 2.9"
+
+# Cross-origin requests from the Vue frontend
+gem "rack-cors"
+
+group :development, :test do
+  gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
+  gem "dotenv", "~> 3.1"       # loads ../.env when running Rails on the host
+  gem "rspec-rails", "~> 7.1"
+  gem "factory_bot_rails"
+  gem "faker"
+  gem "brakeman", require: false
+  gem "rubocop-rails-omakase", require: false
+end
+
+group :development do
+  gem "letter_opener_web", "~> 3.0"
+end
+
+group :test do
+  gem "shoulda-matchers", "~> 6.4"
+  gem "database_cleaner-active_record"
+  gem "database_cleaner-mongoid"
+end

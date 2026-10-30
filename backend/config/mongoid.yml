@@ -1,0 +1,25 @@
+# MongoDB stores high-volume, flexibly-shaped data (messages, activity logs).
+# Relational data lives in PostgreSQL via ActiveRecord (see database.yml).
+development:
+  clients:
+    default:
+      uri: <%= ENV.fetch("MONGODB_URL", "mongodb://localhost:27017/obrolin_development") %>
+      options:
+        server_selection_timeout: 5
+
+test:
+  clients:
+    default:
+      uri: <%= ENV.fetch("MONGODB_TEST_URL", "mongodb://localhost:27017/obrolin_test") %>
+      options:
+        read:
+          mode: :primary
+        max_pool_size: 1
+        server_selection_timeout: 5
+
+production:
+  clients:
+    default:
+      uri: <%= ENV["MONGODB_URL"] %>
+      options:
+        server_selection_timeout: 5

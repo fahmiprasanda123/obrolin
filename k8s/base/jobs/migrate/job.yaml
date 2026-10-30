@@ -1,0 +1,29 @@
+# Runs schema migrations and creates MongoDB indexes. Jobs are immutable, so
+# `make k8s-migrate` deletes the previous run before applying this again.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: obrolin-migrate
+spec:
+  backoffLimit: 6 # retries (with backoff) while postgres/mongo are starting
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: obrolin-migrate
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: migrate
+          image: obrolin-backend
+          command: ["bin/rails", "db:create", "db:migrate", "db:mongoid:create_indexes"]
+          envFrom:
+            - configMapRef: { name: obrolin-config }
+            - secretRef: { name: obrolin-secrets }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 512Mi }

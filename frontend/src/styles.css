@@ -1,0 +1,369 @@
+/*
+ * Obrolin design tokens. Reasons for each choice: DESIGN-DECISIONS.md.
+ * Warm paper base, an ink-green sidebar, and one clay accent reserved for
+ * things that need attention: unread badges, mentions of you, primary actions.
+ * Links, focus and mentions of others use the ink green, so the UI runs on
+ * two hues plus the semantic green (online) and red (danger).
+ *
+ * The dark palette is declared twice: once for "follow the OS" and once for
+ * an explicit choice in the profile dialog (html[data-theme]). CSS cannot
+ * OR a media query with a selector, so keep the two blocks in sync.
+ */
+:root {
+  --bg: #f6f4f0;
+  --surface: #ffffff;
+  --surface-muted: #efece6;
+  --border: #e2ddd4;
+  --border-control: #8a8275;
+  --text: #1f2523;
+  --text-muted: #626b67;
+  --sidebar-bg: #1d2b2a;
+  --sidebar-hover: #2a3b39;
+  --sidebar-active: #36504c;
+  --sidebar-text: #c9d5d2;
+  --sidebar-text-strong: #ffffff;
+  --accent: #b9532f;
+  --accent-hover: #a0441f;
+  --accent-text: #ffffff;
+  --accent-soft: #f7e3d9;
+  --accent-strong: #8f3b1b;
+  --link: #2c6158;
+  --mention-bg: #e1ece8;
+  --mention-text: #1f4a44;
+  --online: #2f8f5b;
+  --danger: #b42318;
+  --focus: #2c6158;
+  --avatar-fg: 35% 25%;
+  --avatar-bg: 40% 86%;
+  --tap: 32px;
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --shadow-pop: 0 8px 24px rgb(20 30 28 / 0.16);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141918;
+    --surface: #1b2120;
+    --surface-muted: #232b2a;
+    --border: #2f3937;
+    --border-control: #6f7b77;
+    --text: #e6ebe9;
+    --text-muted: #9aa5a1;
+    --sidebar-bg: #101615;
+    --sidebar-hover: #1d2726;
+    --sidebar-active: #2a3a38;
+    --accent: #e07a52;
+    --accent-hover: #ec8d68;
+    --accent-text: #1a0f0a;
+    --accent-soft: #3a2419;
+    --accent-strong: #e07a52;
+    --link: #8cc7bb;
+    --mention-bg: #223531;
+    --mention-text: #a9d8cc;
+    --online: #4cc184;
+    --danger: #f97066;
+    --focus: #8cc7bb;
+    --avatar-fg: 45% 85%;
+    --avatar-bg: 25% 28%;
+    --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.45);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #141918;
+  --surface: #1b2120;
+  --surface-muted: #232b2a;
+  --border: #2f3937;
+  --border-control: #6f7b77;
+  --text: #e6ebe9;
+  --text-muted: #9aa5a1;
+  --sidebar-bg: #101615;
+  --sidebar-hover: #1d2726;
+  --sidebar-active: #2a3a38;
+  --accent: #e07a52;
+  --accent-hover: #ec8d68;
+  --accent-text: #1a0f0a;
+  --accent-soft: #3a2419;
+  --accent-strong: #e07a52;
+  --link: #8cc7bb;
+  --mention-bg: #223531;
+  --mention-text: #a9d8cc;
+  --online: #4cc184;
+  --danger: #f97066;
+  --focus: #8cc7bb;
+  --avatar-fg: 45% 85%;
+  --avatar-bg: 25% 28%;
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.45);
+  color-scheme: dark;
+}
+
+/* Touch screens get 44px tap targets; mouse users keep the denser layout. */
+@media (pointer: coarse) {
+  :root {
+    --tap: 44px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--link);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  line-height: 1.2;
+  margin: 0;
+}
+
+/* ---- Form controls ---------------------------------------------------- */
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.field .hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.field .error {
+  font-size: 13px;
+  color: var(--danger);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea,
+select {
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius);
+  padding: 9px 11px;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 0;
+  border-color: var(--focus);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: max(38px, var(--tap));
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-control);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: var(--surface-muted);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.btn--primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn--danger {
+  color: var(--danger);
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: var(--tap);
+  height: var(--tap);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.alert {
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---- Auth & standalone pages ------------------------------------------ */
+
+.page-center {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+}
+
+.card--wide {
+  max-width: 560px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 20px;
+  margin-bottom: 20px;
+}
+
+.brand img {
+  width: 30px;
+  height: 30px;
+}
+
+.stack {
+  display: grid;
+  gap: 14px;
+}
+
+/* ---- Message body ----------------------------------------------------- */
+
+.mention {
+  background: var(--mention-bg);
+  color: var(--mention-text);
+  border-radius: var(--radius-sm);
+  padding: 0 3px;
+  font-weight: 600;
+}
+
+.mention--me {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* ---- Side panels (thread, members, search) ---------------------------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 57px;
+  padding: 8px 12px 8px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel__header h2 {
+  font-size: 16px;
+}
+
+.panel__header .muted {
+  font-size: 13px;
+}
+
+.panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}

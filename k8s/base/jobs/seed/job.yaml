@@ -1,0 +1,28 @@
+# Optional demo data (idempotent). Run after the migrate Job: `make k8s-seed`.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: obrolin-seed
+spec:
+  backoffLimit: 3
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: obrolin-seed
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: seed
+          image: obrolin-backend
+          command: ["bin/rails", "db:seed"]
+          envFrom:
+            - configMapRef: { name: obrolin-config }
+            - secretRef: { name: obrolin-secrets }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 512Mi }

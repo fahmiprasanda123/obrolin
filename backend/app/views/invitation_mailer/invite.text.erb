@@ -1,0 +1,6 @@
+<%= @inviter.display_name %> (@<%= @inviter.username %>) invited you to the <%= @workspace.name %> workspace on Obrolin.
+
+Accept the invitation: <%= @invitation.url %>
+
+This link expires on <%= @invitation.expires_at.to_fs(:long) %>.
+If you don't have an account yet, sign up with <%= @invitation.email %>.

@@ -1,0 +1,61 @@
+# ActionCable runs as its own Deployment (same image as the API) so
+# long-lived WebSockets scale independently of REST traffic. Two replicas
+# prove that broadcasts reach every pod through Redis pub/sub.
+apiVersion: v1
+kind: Service
+metadata:
+  name: cable
+spec:
+  type: ClusterIP
+  selector:
+    app: cable
+  ports:
+    - port: 3000
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cable
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cable
+  template:
+    metadata:
+      labels:
+        app: cable
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      # Give open WebSockets a moment to close cleanly on rollout.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: cable
+          image: obrolin-backend
+          command: ["bundle", "exec", "puma", "-p", "3000", "cable/config.ru"]
+          ports:
+            - name: http
+              containerPort: 3000
+          envFrom:
+            - configMapRef: { name: obrolin-config }
+            - secretRef: { name: obrolin-secrets }
+          securityContext:
+            allowPrivilegeEscalation: false
+          # cable/config.ru serves a plain 200 at /up next to the WebSocket.
+          startupProbe:
+            httpGet: { path: /up, port: http }
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /up, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /up, port: http }
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 50m, memory: 192Mi }
+            limits: { cpu: 300m, memory: 384Mi }

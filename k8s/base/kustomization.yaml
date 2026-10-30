@@ -1,0 +1,43 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: obrolin
+
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: obrolin
+    includeSelectors: false
+
+resources:
+  - namespace.yaml
+  - secret.yaml
+  - postgres.yaml
+  - mongodb.yaml
+  - redis.yaml
+  - api.yaml
+  - cable.yaml
+  - sidekiq.yaml
+  - frontend.yaml
+  - ingress.yaml
+  - hpa.yaml
+
+# The name is kept stable (no content-hash suffix) because the migrate/seed
+# Jobs are applied from separate kustomizations and must find it. After
+# changing a value, run `make k8s-restart` so pods pick it up.
+configMapGenerator:
+  - name: obrolin-config
+    options:
+      disableNameSuffixHash: true
+    literals:
+      - RAILS_ENV=production
+      - RAILS_LOG_LEVEL=info
+      - RAILS_MAX_THREADS=5
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - POSTGRES_DB=obrolin_production
+      - MONGODB_URL=mongodb://mongodb:27017/obrolin_production
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_CABLE_URL=redis://redis:6379/1
+      - REDIS_SIDEKIQ_URL=redis://redis:6379/2
+      - FORCE_SSL=false
+      - ALLOWED_ORIGINS=http://localhost
+      - FRONTEND_URL=http://localhost

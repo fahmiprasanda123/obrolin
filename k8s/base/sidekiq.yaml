@@ -1,0 +1,44 @@
+# Background workers: no Service, they only pull jobs from Redis.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sidekiq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sidekiq
+  template:
+    metadata:
+      labels:
+        app: sidekiq
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      # Sidekiq stops fetching on SIGTERM and finishes running jobs (25s).
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: sidekiq
+          image: obrolin-backend
+          command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+          envFrom:
+            - configMapRef: { name: obrolin-config }
+            - secretRef: { name: obrolin-secrets }
+          securityContext:
+            allowPrivilegeEscalation: false
+          # Sidekiq has no HTTP port. Its heartbeat touches /tmp/sidekiq_alive
+          # (config/initializers/sidekiq.rb); a stale file means it is stuck.
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "test -f /tmp/sidekiq_alive"]
+            periodSeconds: 5
+            failureThreshold: 30
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "test $(( $(date +%s) - $(stat -c %Y /tmp/sidekiq_alive) )) -lt 60"]
+            periodSeconds: 30
+          resources:
+            requests: { cpu: 50m, memory: 192Mi }
+            limits: { cpu: 300m, memory: 384Mi }
